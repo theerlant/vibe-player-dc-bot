@@ -1,0 +1,3 @@
+[submodule "nodelink-server"]
+	path = nodelink-server
+	url = https://github.com/PerformanC/NodeLink.git
