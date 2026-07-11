@@ -1,6 +1,7 @@
 # Vibe Player Bot
 
 **UNDER CONSTRUCTION**
+
 A "Background music" discord bot for your server to chill together.
 
 ## Background
