@@ -72,6 +72,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 // ---- ADD COMMANDS HERE ----
 client.commands = new Collection();
 client.commands.set(pingCommand.data.name, pingCommand);
+client.commands.set(createPlaylistCommand.data.name, createPlaylistCommand);
+client.commands.set(deletePlaylistCommand.data.name, deletePlaylistCommand);
+client.commands.set(joinCommand.data.name, joinCommand);
 
 // Start bot
 const TOKEN = process.env.TOKEN;
