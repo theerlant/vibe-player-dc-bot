@@ -1,0 +1,35 @@
+{
+  "name": "vibe-dc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest",
+    "test:verbose": "vitest --reporter=verbose",
+    "test:run": "vitest run",
+    "start": "node --experimental-strip-types --env-file=.env src/bot.ts",
+    "deploy": "node --experimental-strip-types --env-file=.env src/deploy-commands.ts",
+    "remove-commands": "node --experimental-strip-types --env-file=.env src/remove-commands.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@discordjs/voice": "^0.19.2",
+    "@types/fluent-ffmpeg": "^2.1.28",
+    "discord.js": "^14.26.4",
+    "dotenv": "^17.4.2",
+    "ffmpeg-static": "^5.3.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "lowdb": "^7.0.1",
+    "shoukaku": "^4.3.0",
+    "uuid": "^14.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.6.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
+  }
+}
