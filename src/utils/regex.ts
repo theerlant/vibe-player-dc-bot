@@ -4,12 +4,12 @@ export function titleCheck(input: string): Error | null {
   }
 
   if (input.length > 50) {
-    Error("TOO LONG");
+    return Error("TOO LONG");
   }
 
   const regex = /^[a-zA-Z0-9\s-_]{3,50}$/;
   if (!regex.test(input)) {
-    Error("CONTAIN ILLEGAL CHARACTER");
+    return Error("CONTAIN ILLEGAL CHARACTER");
   }
 
   return null;
