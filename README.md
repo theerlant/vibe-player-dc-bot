@@ -10,7 +10,7 @@ People enjoyed istening to background music like instrumental song and Lo-Fi whe
 
 ## Features
 
-- Play music from several sources with help of `discord-player`.
+- Play music from several sources with help of `yt-dlp` and other direct API parser (optional as this requires you to get your own API key).
 - Add, delete or shuffle playlist on the fly.
 - Dynamically switch white noise or change its volume.
 - Manage playlists to create different mood or music genre.
