@@ -43,7 +43,7 @@ async function execute(interaction: ChatInputCommandInteraction) {
   }
 
   try {
-    await createPlaylist(interaction.client.db, interaction.guildId!, name);
+    await createPlaylist(interaction.guildId!, name);
     await interaction.reply(`Playlist **${name}** created.`);
   } catch (e) {
     if (e instanceof Error && e.message === "PLAYLIST_EXIST") {

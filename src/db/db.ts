@@ -1,45 +1,35 @@
 import type { Low } from "lowdb";
 import { JSONFilePreset } from "lowdb/node";
-import type { DBRoot, DBGuild } from "./types.ts";
+import type { DBGuild } from "./types.ts";
+import fs from "fs";
+import path from "path";
+
+// Cache for LowDB instances to avoid creating multiple instances for the same file
+const dbCache = new Map<string, Low<DBGuild>>();
 
 /**
- * Get LowDB database instance
- * @returns LowDB instance
+ * Get LowDB database instance for a specific guild
+ * @param guildId Discord Guild ID
+ * @returns LowDB instance for the guild
  */
-export async function getDatabase(dbName: string): Promise<Low<DBRoot>> {
-  const dbBlueprint: DBRoot = {
-    guilds: {}, // Initialize as an empty object instead of a Map
-  };
-
-  const db = await JSONFilePreset(`${dbName}.json`, dbBlueprint);
-  return db;
-}
-
-/**
- * Get guild attached playlists and tracks
- * @param db LowDB database instance
- * @param guild_id Discord Guild ID
- * @returns Guild data
- */
-export async function getGuildData(
-  db: Low<DBRoot>,
-  guild_id: string,
-): Promise<DBGuild> {
-  // Access directly using bracket notation
-  const guildData = db.data.guilds[guild_id];
-
-  if (guildData === undefined) {
-    // Create empty guild data with plain objects
-    const emptyGuildData: DBGuild = {
-      playlists: {},
-    };
-
-    // Assign directly and save
-    db.data.guilds[guild_id] = emptyGuildData;
-    await db.write();
-
-    return emptyGuildData;
+export async function getGuildDatabase(guildId: string): Promise<Low<DBGuild>> {
+  if (dbCache.has(guildId)) {
+    return dbCache.get(guildId)!;
   }
 
-  return guildData;
+  // Ensure the db directory exists
+  const dbDir = path.join(process.cwd(), "db");
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir, { recursive: true });
+  }
+
+  const dbBlueprint: DBGuild = {
+    playlists: {},
+  };
+
+  const dbPath = path.join(dbDir, `${guildId}.json`);
+  const db = await JSONFilePreset(dbPath, dbBlueprint);
+
+  dbCache.set(guildId, db);
+  return db;
 }

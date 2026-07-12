@@ -1,13 +1,12 @@
-import type { Low } from "lowdb";
-import { getGuildData } from "./db.ts";
-import { type DBPlaylist, type DBRoot } from "./types.ts";
+import { getGuildDatabase } from "./db.ts";
+import { type DBPlaylist } from "./types.ts";
 
 export async function createPlaylist(
-  db: Low<DBRoot>,
   guildId: string,
   name: string,
 ) {
-  const guild_data = await getGuildData(db, guildId);
+  const db = await getGuildDatabase(guildId);
+  const guild_data = db.data;
 
   // Check if it exists using bracket notation
   if (guild_data.playlists[name]) {
@@ -20,18 +19,18 @@ export async function createPlaylist(
   await db.write();
 }
 
-export async function getPlaylists(db: Low<DBRoot>, guildId: string) {
-  const guild_data = await getGuildData(db, guildId);
+export async function getPlaylists(guildId: string) {
+  const db = await getGuildDatabase(guildId);
+  const guild_data = db.data;
 
   return guild_data.playlists;
 }
 
 export async function getPlaylist(
-  db: Low<DBRoot>,
   guildId: string,
   name: string,
 ): Promise<DBPlaylist> {
-  const playlists = await getPlaylists(db, guildId);
+  const playlists = await getPlaylists(guildId);
 
   if (!playlists[name]) {
     throw Error("PLAYLIST NOT FOUND");
@@ -41,11 +40,12 @@ export async function getPlaylist(
 }
 
 export async function deletePlaylist(
-  db: Low<DBRoot>,
   guildId: string,
   name: string,
 ) {
-  const playlists = await getPlaylists(db, guildId);
+  const db = await getGuildDatabase(guildId);
+  const guild_data = db.data;
+  const playlists = guild_data.playlists;
 
   if (!playlists[name]) {
     throw Error("PLAYLIST NOT FOUND");
@@ -58,12 +58,13 @@ export async function deletePlaylist(
 }
 
 export async function renamePlaylist(
-  db: Low<DBRoot>,
   guildId: string,
   name: string,
   new_name: string,
 ) {
-  const playlists = await getPlaylists(db, guildId);
+  const db = await getGuildDatabase(guildId);
+  const guild_data = db.data;
+  const playlists = guild_data.playlists;
 
   if (!playlists[name]) {
     throw Error("PLAYLIST NOT FOUND");

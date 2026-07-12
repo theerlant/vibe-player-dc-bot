@@ -3,19 +3,19 @@ import {
   SharedSlashCommand,
   SlashCommandBuilder,
 } from "discord.js";
-import type { Low } from "lowdb";
-import type { DBRoot } from "../db/types.ts";
+
+
+export type CommandData = Collection<
+  String,
+  {
+    data: SharedSlashCommand;
+    autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
+    execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+  }
+>;
 
 declare module "discord.js" {
   export interface Client {
-    db: Low<DBRoot>;
-    commands: Collection<
-      String,
-      {
-        data: SharedSlashCommand;
-        autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
-        execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
-      }
-    >;
+    commands: CommandData;
   }
 }

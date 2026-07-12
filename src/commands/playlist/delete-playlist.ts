@@ -24,7 +24,6 @@ async function autocomplete(interaction: AutocompleteInteraction) {
   }
 
   const playlists = await getPlaylists(
-    interaction.client.db,
     interaction.guild.id,
   );
 
@@ -58,7 +57,7 @@ async function execute(interaction: ChatInputCommandInteraction) {
   }
 
   try {
-    await deletePlaylist(interaction.client.db, interaction.guildId, name);
+    await deletePlaylist(interaction.guildId, name);
     await interaction.reply(`Deleted playlist **${name}**`);
   } catch (e) {
     if (e instanceof Error && e.message === "PLAYLIST NOT FOUND") {

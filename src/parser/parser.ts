@@ -1,5 +1,4 @@
 import type { DBPlaylist, DBTrack } from "../db/types";
-import { isUrlValidMedia } from "./utils";
 import {
   getTrackFromUrl,
   getTracksFromPlaylistUrl,
@@ -47,6 +46,6 @@ export async function searchMedia(
   } else if (source === "soundcloud") {
     return searchSoundcloud(query, page);
   }
-  
+
   throw new Error(`Search source ${source} is not supported yet`);
 }

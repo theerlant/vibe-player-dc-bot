@@ -8,14 +8,13 @@ import {
   Routes,
   type RESTPostAPIApplicationCommandsJSONBody,
 } from "discord.js";
-import type { Low } from "lowdb";
-import { getDatabase } from "./db/db.ts";
-import { type DBRoot } from "./db/types.ts";
+
 import { pingCommand } from "./commands/utils/ping.ts";
 import { createPlaylistCommand } from "./commands/playlist/create-playlist.ts";
 import { Connectors, Shoukaku } from "shoukaku";
 import { joinCommand } from "./commands/playback/join.ts";
 import { deletePlaylistCommand } from "./commands/playlist/delete-playlist.ts";
+import { commands } from "./commands/commands-barrel.ts";
 
 // Setup client
 const client = new Client({
@@ -24,7 +23,6 @@ const client = new Client({
 
 // Client ready callback
 client.once(Events.ClientReady, async (readyClient) => {
-  readyClient.db = await getDatabase("db");
   console.log("The bot is ready, Sir!");
 });
 
@@ -71,10 +69,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 // ---- ADD COMMANDS HERE ----
 client.commands = new Collection();
-client.commands.set(pingCommand.data.name, pingCommand);
-client.commands.set(createPlaylistCommand.data.name, createPlaylistCommand);
-client.commands.set(deletePlaylistCommand.data.name, deletePlaylistCommand);
-client.commands.set(joinCommand.data.name, joinCommand);
+client.commands = commands;
 
 // Start bot
 const TOKEN = process.env.TOKEN;
