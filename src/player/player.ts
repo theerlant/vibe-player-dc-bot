@@ -1,21 +1,25 @@
 import {
   createAudioResource,
   entersState,
+  StreamType,
   VoiceConnectionStatus,
   type AudioPlayer,
   type VoiceConnection,
 } from "@discordjs/voice";
 import { PassThrough } from "stream";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegPath from "ffmpeg-static";
+import { StreamMixer } from "./utils/stream_mixer.ts";
+import { StreamSynchronizer } from "./utils/stream_synchronizer.ts";
 
 ffmpeg.setFfmpegPath(ffmpegPath!);
 
-const players = new Map();
+let i = 0;
 
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+const players = new Map();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,11 +31,39 @@ export function setupPlayer(
 ) {
   players.set(guildId, { connection: player });
 
-  const stream = new PassThrough();
-  const audioPath = join(__dirname, "test_001.mp3");
-  ffmpeg(audioPath).format("mp3").pipe(stream);
+  const mixer = new StreamMixer();
+  mixer.volumeB = 0.3;
 
-  const resource = createAudioResource(stream);
+  const synchronizer = new StreamSynchronizer(mixer, 65486);
+
+  const [stream1, stream2] = [new PassThrough(), new PassThrough()];
+
+  stream1.pipe(synchronizer.inputA);
+  stream2.pipe(synchronizer.inputB);
+
+  const resource = createAudioResource(mixer, {
+    inputType: StreamType.Raw,
+  });
+
+  const audioPath = join(__dirname, "test_001.mp3");
+  ffmpeg(audioPath)
+    .format("s16le")
+    .audioCodec("pcm_s16le")
+    .audioFrequency(48000)
+    .audioChannels(2)
+    .inputOptions(`-stream_loop`, "-1")
+    .on("error", (err) => console.error("FFmpeg 1 Error:", err.message))
+    .pipe(stream1);
+
+  const audioPath2 = join(__dirname, "test_002.mp3");
+  ffmpeg(audioPath2)
+    .format("s16le")
+    .audioCodec("pcm_s16le")
+    .audioFrequency(48000)
+    .audioChannels(2)
+    .inputOptions(`-stream_loop`, "-1")
+    .on("error", (err) => console.error("FFmpeg 2 Error:", err.message))
+    .pipe(stream2);
 
   player.play(resource);
 
