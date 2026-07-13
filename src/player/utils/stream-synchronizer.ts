@@ -7,9 +7,9 @@ export class StreamSynchronizer {
   private bufferA: Buffer = Buffer.alloc(0);
   private bufferB: Buffer = Buffer.alloc(0);
 
-  private MAX_BUFFER_SIZE: number;
+  private chunkSize: number = 65486;
+  private MAX_BUFFER_SIZE: number = 65486 * 10;
   private destinationMixer: Writable;
-  private chunkSize: number;
 
   private callbackA: (() => void) | null = null;
   private callbackB: (() => void) | null = null;
@@ -18,10 +18,14 @@ export class StreamSynchronizer {
   private dispatchTimeout: NodeJS.Timeout | null = null;
   private MAX_WAIT_MS = 20;
 
-  constructor(destinationMixer: Writable, chunkSize = 3840) {
+  private startDelay: number = 2 * this.chunkSize; // wait this amount of buffer before playing to make sure playback is synchronized.
+  private isStarted: boolean = false;
+  private startWaitTimeout: number = 3000; // hard timeout that will start playback regardless of chunk size after this timeout.
+
+  private startTimeout?: NodeJS.Timeout;
+
+  constructor(destinationMixer: Writable) {
     this.destinationMixer = destinationMixer;
-    this.chunkSize = chunkSize;
-    this.MAX_BUFFER_SIZE = this.chunkSize * 10;
 
     this.inputA = this.createInput("A");
     this.inputB = this.createInput("B");
@@ -62,6 +66,27 @@ export class StreamSynchronizer {
   }
 
   private tryDispatch(force = false) {
+    // Start timeout right after the first buffer arrives
+    if (!this.startTimeout && !this.isStarted) {
+      this.startTimeout = setTimeout(() => {
+        this.isStarted = true;
+        this.startTimeout = undefined;
+        this.tryDispatch();
+      }, this.startWaitTimeout);
+    }
+
+    // Wait until startDelay bytes before playing to make sure playback is synchronized.
+    if (!this.isStarted) {
+      if (this.bufferA.length < this.startDelay && this.bufferB.length < this.startDelay) {
+        this.releaseCallbacks();
+        return;
+      }
+      this.isStarted = true;
+      if (this.startTimeout) {
+        clearTimeout(this.startTimeout);
+        this.startTimeout = undefined;
+      }
+    }
     // 1. Process mixed chunks
     while (!this.isMixerBlocked) {
       const aReady = this.bufferA.length >= this.chunkSize;
@@ -127,6 +152,10 @@ export class StreamSynchronizer {
       }
     }
 
+    this.releaseCallbacks();
+  }
+
+  private releaseCallbacks() {
     // 2. Safely release callbacks (Using setImmediate prevents Sync Deadlock)
     if (this.callbackA && this.bufferA.length < this.MAX_BUFFER_SIZE) {
       const cb = this.callbackA;

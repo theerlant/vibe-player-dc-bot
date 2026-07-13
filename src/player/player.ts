@@ -10,16 +10,35 @@ import { PassThrough } from "stream";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 
-import ffmpeg from "fluent-ffmpeg";
+import ffmpeg, { type FfmpegCommand } from "fluent-ffmpeg";
 import ffmpegPath from "ffmpeg-static";
-import { StreamMixer } from "./utils/stream_mixer.ts";
-import { StreamSynchronizer } from "./utils/stream_synchronizer.ts";
+import { StreamMixer } from "./utils/stream-mixer.ts";
+import { StreamSynchronizer } from "./utils/stream-synchronizer.ts";
+import type { DBTrack } from "../db/types.ts";
 
 ffmpeg.setFfmpegPath(ffmpegPath!);
 
-let i = 0;
+export type Player = {
+  player: AudioPlayer;
+  mixer: StreamMixer;
+  synchronizer: StreamSynchronizer;
+  queue: {
+    tracks: DBTrack[];
+    loopMode?: "all" | "single";
+  };
+  foregroundTrack?: TrackPlayback;
+  backgroundTrack?: TrackPlayback;
+};
 
-const players = new Map();
+export type TrackPlayback = {
+  title: string;
+  duration: number;
+  progress: number;
+  volume: number;
+  process: FfmpegCommand;
+};
+
+const players = new Map<string, Player>();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,19 +46,17 @@ const __dirname = dirname(__filename);
 export function setupPlayer(
   player: AudioPlayer,
   connection: VoiceConnection,
-  guildId: String,
+  guildId: string,
 ) {
-  players.set(guildId, { connection: player });
-
   const mixer = new StreamMixer();
-  mixer.volumeB = 0.3;
+  const synchronizer = new StreamSynchronizer(mixer);
 
-  const synchronizer = new StreamSynchronizer(mixer, 65486);
-
-  const [stream1, stream2] = [new PassThrough(), new PassThrough()];
-
-  stream1.pipe(synchronizer.inputA);
-  stream2.pipe(synchronizer.inputB);
+  players.set(guildId, {
+    player: player,
+    mixer: mixer,
+    synchronizer: synchronizer,
+    queue: { tracks: [] },
+  });
 
   const resource = createAudioResource(mixer, {
     inputType: StreamType.Raw,
@@ -53,7 +70,7 @@ export function setupPlayer(
     .audioChannels(2)
     .inputOptions(`-stream_loop`, "-1")
     .on("error", (err) => console.error("FFmpeg 1 Error:", err.message))
-    .pipe(stream1);
+    .pipe(synchronizer.inputA);
 
   const audioPath2 = join(__dirname, "test_002.mp3");
   ffmpeg(audioPath2)
@@ -63,7 +80,7 @@ export function setupPlayer(
     .audioChannels(2)
     .inputOptions(`-stream_loop`, "-1")
     .on("error", (err) => console.error("FFmpeg 2 Error:", err.message))
-    .pipe(stream2);
+    .pipe(synchronizer.inputB);
 
   player.play(resource);
 
@@ -83,4 +100,10 @@ export function setupPlayer(
       }
     },
   );
+}
+
+export function startPlayback(guildId: string) {
+  if (!players.get(guildId)) {
+    throw Error("PLAYER NOT INITIALIZED");
+  }
 }

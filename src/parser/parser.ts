@@ -5,6 +5,7 @@ import {
   searchSoundcloud,
   searchYoutube,
   verifyUrl,
+  getStreamUrl as ytGetStreamUrl,
 } from "./youtube";
 
 type searchSource = "youtube" | "soundcloud";
@@ -48,4 +49,12 @@ export async function searchMedia(
   }
 
   throw new Error(`Search source ${source} is not supported yet`);
+}
+
+/**
+ * Gets the direct media stream URL for the provided url.
+ * Prioritizes the most efficient audio format, allowing video up to 240p.
+ */
+export async function getStreamUrl(url: string): Promise<string> {
+  return ytGetStreamUrl(url);
 }

@@ -16,12 +16,12 @@ const executablePath = path.join("binary", binaryName);
 
 const options = "--no-warnings";
 
-export async function verifyUrl(url: string): Promise<Record<string, any>> {
+export async function verifyUrl(url: string): Promise<void> {
   const command = `${executablePath} --simulate ${options} "${url}"`;
 
   try {
     const { stdout } = await execAsync(command);
-    return JSON.parse(stdout);
+    return;
   } catch (e) {
     const error = e as ExecException;
     const stderr = error.stderr || "";
@@ -135,3 +135,27 @@ export async function searchSoundcloud(
   return tracks;
 }
 
+export async function getStreamUrls(url: string): Promise<Array<string>> {
+  // -f "bestaudio/best[height<=240]" selects the best audio-only stream,
+  // or falls back to the best stream with video up to 240p.
+  // --get-url prints the direct download/stream URL.
+  const command = `${executablePath} -f "bestaudio/best[height<=240]" --get-url ${options} "${url}"`;
+
+  try {
+    const { stdout } = await execAsync(command);
+    // yt-dlp might return multiple lines if it selects multiple formats (e.g. video+audio separately).
+    // The fallback format should return a single URL, but we just take the first line to be safe.
+    let streamUrls = stdout.trim().split("\n");
+    if (!streamUrls.length) {
+      throw Error("NO STREAM LINK FOUND");
+    }
+    return streamUrls;
+  } catch (e) {
+    const error = e as ExecException;
+    throw Error(`Failed to get stream URL: ${error.stderr || error.message}`);
+  }
+}
+
+export async function getBestStreamUrl(url: string) {
+  return (await getStreamUrls(url))[0];
+}
