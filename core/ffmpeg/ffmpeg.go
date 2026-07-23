@@ -7,10 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 )
-
-const defaultParams = "-hide_banner -loglevel error -f wav -ar 48000 -ac 2"
 
 type FFMpeg struct {
 	cmd           *exec.Cmd
@@ -53,9 +50,17 @@ func New() (*FFMpeg, error) {
 	}
 
 	ffmpeg := FFMpeg{
-		cmd:           nil,
-		ffmpegPath:    ffmpegPath,
-		defaultParams: strings.Split(defaultParams, " "),
+		cmd:        nil,
+		ffmpegPath: ffmpegPath,
+		defaultParams: []string{
+			"-user_agent", "\"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36\"",
+			"-headers", "\"Referer: https://www.youtube.com/\"",
+			"-hide_banner",
+			"-loglevel", "error",
+			"-f", "wav",
+			"-ar", "48000",
+			"-ac", "2",
+		},
 	}
 
 	return &ffmpeg, nil

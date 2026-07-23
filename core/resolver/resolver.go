@@ -10,10 +10,10 @@ import (
 )
 
 var (
-	ytdlpPath string
-
-	ytSupported bool
-	scSupported bool
+	ytdlpPath     string
+	defaultParams []string
+	ytSupported   bool
+	scSupported   bool
 )
 
 func init() {
@@ -57,6 +57,15 @@ func init() {
 	out, err := exec.Command(ytdlpPath, "--version").Output()
 	if err != nil {
 		log.Fatalf("YT-DLP returning error when checking: %v. Cannot continue as this is required for playback!\n", err)
+	}
+
+	defaultParams = []string{
+		"--flat-playlist",
+		"--skip-download",
+		"--quiet",
+		"--no-warnings",
+		"--print",
+		"%(.{id,title,url,duration})#j",
 	}
 
 	log.Printf("YT-DLP version: %s", out)
