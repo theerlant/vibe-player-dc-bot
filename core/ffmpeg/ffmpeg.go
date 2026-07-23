@@ -10,11 +10,11 @@ import (
 	"strings"
 )
 
-const defaultParams = "-f wav -ar 48000 -ac 2"
+const defaultParams = "-hide_banner -loglevel error -f wav -ar 48000 -ac 2"
 
 type FFMpeg struct {
-	cmd        *exec.Cmd
-	ffmpegPath string
+	cmd           *exec.Cmd
+	ffmpegPath    string
 	defaultParams []string
 }
 
@@ -27,19 +27,34 @@ func New() (*FFMpeg, error) {
 		binaryName = "ffmpeg.exe"
 	}
 
-	ffmpegPath := filepath.Join(exPath, "core", "ffmpeg", "bin", binaryName)
-	if _, err := os.Stat(ffmpegPath); os.IsNotExist(err) {
+	var ffmpegPath string
+	cwd, _ := os.Getwd()
+
+	pathsToTry := []string{
+		filepath.Join(exPath, "core", "ffmpeg", "bin", binaryName),
+		filepath.Join(cwd, "core", "ffmpeg", "bin", binaryName),
+		filepath.Join(cwd, "bin", binaryName),
+	}
+
+	for _, p := range pathsToTry {
+		if _, err := os.Stat(p); err == nil {
+			ffmpegPath = p
+			break
+		}
+	}
+
+	if ffmpegPath == "" {
 		// Fallback to checking the system PATH just in case
 		path, err := exec.LookPath(binaryName)
 		if err != nil {
-			return nil, fmt.Errorf("FFmpeg not found at %s or in system PATH", ffmpegPath)
+			return nil, fmt.Errorf("FFmpeg not found at %s or in system PATH", pathsToTry[0])
 		}
 		ffmpegPath = path
 	}
 
 	ffmpeg := FFMpeg{
-		cmd:        nil,
-		ffmpegPath: ffmpegPath,
+		cmd:           nil,
+		ffmpegPath:    ffmpegPath,
 		defaultParams: strings.Split(defaultParams, " "),
 	}
 
@@ -52,7 +67,7 @@ func (ffmpeg *FFMpeg) CreateProcess(input string) (io.ReadCloser, error) {
 	args = append(args, "pipe:1")
 	cmd := exec.Command(
 		ffmpeg.ffmpegPath,
-		args...
+		args...,
 	)
 
 	stdoutPipe, err := cmd.StdoutPipe()
@@ -91,7 +106,7 @@ func (ffmpeg *FFMpeg) StartProcess() (<-chan error, error) {
 func (ffmpeg *FFMpeg) StopProcess() error {
 	if ffmpeg.cmd != nil && ffmpeg.cmd.Process != nil {
 		err := ffmpeg.cmd.Process.Kill()
-		// If the process is already dead, Windows often returns "invalid argument" 
+		// If the process is already dead, Windows often returns "invalid argument"
 		// and Unix returns os.ErrProcessDone. We can safely ignore these.
 		if err != nil && err.Error() != "os: process already finished" && err.Error() != "invalid argument" {
 			return err
