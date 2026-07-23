@@ -10,12 +10,10 @@ import (
 )
 
 var (
-	ytdlpPath  string
-	spotdlPath string
+	ytdlpPath string
 
 	ytSupported bool
 	scSupported bool
-	spSupported bool
 )
 
 func init() {
@@ -62,37 +60,6 @@ func init() {
 	}
 
 	log.Printf("YT-DLP version: %s", out)
-	ytSupported = true
-	scSupported = true
-
-	// Optional: Find and test spotdl as a metadata parser for spotify url.
-	spotdlName := "spotdl"
-	if runtime.GOOS == "windows" {
-		spotdlName = "spotdl.exe"
-	}
-
-	spotdlPath = filepath.Join(binPath, spotdlName)
-
-	if _, err := os.Stat(spotdlPath); errors.Is(err, os.ErrNotExist) {
-		log.Printf("Spot-DL is not found in %s. Spotify url won't be able to be used\n", spotdlPath)
-	} else {
-		out, err = exec.Command(spotdlPath, "--version").Output()
-		if err != nil {
-			log.Printf("Spot-DL returning error when checking: %v. Spotify url won't be able to be used\n", err)
-		} else {
-			log.Printf("Spot-DL version: %s", out)
-			spSupported = true
-		}
-	}
-
-	sources := "Youtube" // Youtube is always available as yt-dlp is the main requirement
-	if scSupported {
-		sources += ", Soundcloud" // In case yt-dlp changes
-	}
-	if spSupported {
-		sources += ", Spotify"
-	}
-	log.Printf("Supported sources: %s\n", sources)
 
 	log.Println("---- [RESOLVER INITIALIZATION END] ----")
 
